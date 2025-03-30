@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>汪得福cafe</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,43 +13,53 @@
         <div class="welcome-content">
             <h1>汪得福cafe</h1>
             <div class="dog-animation">
-                <!-- 狗狗动画HTML结构 -->
                 <div class="dog">
                     <div class="body"></div>
                     <div class="head"></div>
                     <div class="ear ear-left"></div>
                     <div class="ear ear-right"></div>
+                    <div class="eye left-eye"></div>
+                    <div class="eye right-eye"></div>
+                    <div class="snout"></div>
                     <div class="tail"></div>
                 </div>
             </div>
             <p>在街道、電梯各列席的群中，經過最溫暖的時光</p>
-            <button class="enter-btn">進入網站</button>
+            <button class="enter-btn pulse">進入網站 <i class="fas fa-paw"></i></button>
         </div>
     </div>
 
-    <!-- 主内容（默认隐藏） -->
+    <!-- 主内容 -->
     <div class="main-content hidden">
         <!-- 导航栏 -->
-        <nav>...</nav>
-        
+        <nav class="navbar">
+            <div class="logo">汪得福cafe</div>
+            <ul class="nav-links">
+                <li><a href="#menu"><i class="fas fa-coffee"></i> 菜單</a></li>
+                <li><a href="#pets"><i class="fas fa-paw"></i> 寵物店員</a></li>
+                <li><a href="#team"><i class="fas fa-users"></i> 團隊</a></li>
+                <li><a href="quiz.html"><i class="fas fa-question-circle"></i> 知識測驗</a></li>
+            </ul>
+        </nav>
+
         <!-- 菜单区 -->
-        <section id="menu">
-            <h2>我們的菜單</h2>
+        <section id="menu" class="section">
+            <h2><i class="fas fa-utensils"></i> 我們的菜單</h2>
             <div class="menu-grid">
-                <!-- 菜单内容 -->
+                <div class="menu-card">
+                    <h3>咖啡系列</h3>
+                    <ul>
+                        <li>拿鐵咖啡</li>
+                        <li>美式咖啡</li>
+                        <li>卡布奇諾</li>
+                        <li>摩卡咖啡</li>
+                    </ul>
+                </div>
+                <!-- 其他菜单项... -->
             </div>
         </section>
 
-        <!-- 宠物店员 -->
-        <section id="pets">...</section>
-
-        <!-- 人类成员 -->
-        <section id="team">...</section>
-
-        <!-- 测验按钮 -->
-        <section id="quiz-section">
-            <a href="quiz.html" class="quiz-btn">開始寵物知識測驗</a>
-        </section>
+        <!-- 其他内容区... -->
     </div>
 
     <script src="main.js"></script>
