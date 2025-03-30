@@ -3,31 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>汪得福cafe | 主頁</title>
+    <title>歡迎來到寵物咖啡廳</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <header class="main-header">
-        <h1>歡迎來到汪得福cafe</h1>
-    </header>
+<body class="welcome-page">
+    <div class="welcome-container">
+        <h1>歡迎來到 🐶 寵物咖啡廳！</h1>
+        <img src="images/dog.gif" alt="可愛的狗狗" class="animated-dog">
+        <button onclick="enterWebsite()">進入網站</button>
+    </div>
 
-    <main>
-        <!-- 成员介绍区块 -->
-        <section class="team-section">
-            <h2><i class="fas fa-users"></i> 我們的團隊</h2>
-            <div class="members">
-                <div class="member-card">
-                    <img src="images/member1.jpg" alt="店長小黃">
-                    <h3>店長小黃</h3>
-                    <p>黃金獵犬，專長是溫暖微笑接待客人</p>
-                </div>
-                <!-- 更多成员... -->
-            </div>
-        </section>
-
-        <!-- 其他内容区块... -->
-    </main>
-
-    <script src="main.js"></script>
+    <script>
+        function enterWebsite() {
+            window.location.href = "main.html";
+        }
+    </script>
 </body>
 </html>
