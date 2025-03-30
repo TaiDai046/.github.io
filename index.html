@@ -3,65 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>汪得福cafe</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>歡迎光臨汪得福cafe</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* 专属欢迎页样式 */
+        .welcome-screen {
+            background: linear-gradient(135deg, #FFF8DC, #F5E5C0);
+        }
+        .enter-btn {
+            background: #8B4513;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-    <!-- 欢迎画面 -->
     <div class="welcome-screen">
         <div class="welcome-content">
-            <h1>汪得福cafe</h1>
             <div class="dog-animation">
+                <!-- 狗狗动画完整结构 -->
                 <div class="dog">
                     <div class="body"></div>
                     <div class="head"></div>
                     <div class="ear ear-left"></div>
                     <div class="ear ear-right"></div>
-                    <div class="eye left-eye"></div>
-                    <div class="eye right-eye"></div>
-                    <div class="snout"></div>
                     <div class="tail"></div>
                 </div>
             </div>
-            <p>在街道、電梯各列席的群中，經過最溫暖的時光</p>
-            <button class="enter-btn pulse">進入網站 <i class="fas fa-paw"></i></button>
+            <h1>汪得福cafe</h1>
+            <p>按下按鈕進入我們的溫暖空間</p>
+            <a href="home.html" class="enter-btn">進入網站</a>
         </div>
     </div>
-
-    <!-- 主内容 -->
-    <div class="main-content hidden">
-        <!-- 导航栏 -->
-        <nav class="navbar">
-            <div class="logo">汪得福cafe</div>
-            <ul class="nav-links">
-                <li><a href="#menu"><i class="fas fa-coffee"></i> 菜單</a></li>
-                <li><a href="#pets"><i class="fas fa-paw"></i> 寵物店員</a></li>
-                <li><a href="#team"><i class="fas fa-users"></i> 團隊</a></li>
-                <li><a href="quiz.html"><i class="fas fa-question-circle"></i> 知識測驗</a></li>
-            </ul>
-        </nav>
-
-        <!-- 菜单区 -->
-        <section id="menu" class="section">
-            <h2><i class="fas fa-utensils"></i> 我們的菜單</h2>
-            <div class="menu-grid">
-                <div class="menu-card">
-                    <h3>咖啡系列</h3>
-                    <ul>
-                        <li>拿鐵咖啡</li>
-                        <li>美式咖啡</li>
-                        <li>卡布奇諾</li>
-                        <li>摩卡咖啡</li>
-                    </ul>
-                </div>
-                <!-- 其他菜单项... -->
-            </div>
-        </section>
-
-        <!-- 其他内容区... -->
-    </div>
-
-    <script src="main.js"></script>
 </body>
 </html>
