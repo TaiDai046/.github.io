@@ -1,8 +1,121 @@
-/* 狗狗动画CSS */
-.dog {
-  animation: bounce 1s infinite;
+/* ===== 狗狗动画 ===== */
+.dog-animation {
+  display: inline-block;
+  margin: 30px 0;
+  perspective: 1000px;
 }
+
+.dog {
+  position: relative;
+  width: 120px;
+  height: 100px;
+  animation: bounce 1.5s infinite ease-in-out;
+}
+
+/* 狗狗身体部位 */
+.dog .body {
+  width: 80px;
+  height: 50px;
+  background: #5C3317;
+  border-radius: 20px;
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+}
+
+.dog .head {
+  width: 60px;
+  height: 50px;
+  background: #5C3317;
+  border-radius: 50px 50px 40px 40px;
+  position: absolute;
+  top: 0;
+  left: 30px;
+}
+
+.dog .ear {
+  width: 20px;
+  height: 30px;
+  background: #3D2411;
+  position: absolute;
+  top: -5px;
+  border-radius: 10px;
+  z-index: -1;
+}
+
+.dog .ear-left { 
+  left: 25px;
+  transform: rotate(-30deg);
+  animation: ear-twitch-left 2s infinite;
+}
+
+.dog .ear-right {
+  right: 25px;
+  transform: rotate(30deg);
+  animation: ear-twitch-right 2.5s infinite;
+}
+
+.dog .eye {
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 15px;
+}
+
+.dog .eye-left { left: 15px; }
+.dog .eye-right { right: 15px; }
+
+.dog .snout {
+  width: 20px;
+  height: 12px;
+  background: #E8C39E;
+  border-radius: 10px;
+  position: absolute;
+  bottom: 15px;
+  left: 20px;
+}
+
+.dog .tail {
+  width: 15px;
+  height: 40px;
+  background: #3D2411;
+  position: absolute;
+  right: 5px;
+  bottom: 10px;
+  border-radius: 5px;
+  transform-origin: bottom;
+  animation: wag 0.8s infinite alternate;
+}
+
+/* 动画关键帧 */
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+  50% { transform: translateY(-25px); }
+}
+
+@keyframes wag {
+  0% { transform: rotate(-45deg); }
+  100% { transform: rotate(45deg); }
+}
+
+@keyframes ear-twitch-left {
+  0%, 100% { transform: rotate(-30deg); }
+  50% { transform: rotate(-10deg); }
+}
+
+@keyframes ear-twitch-right {
+  0%, 100% { transform: rotate(30deg); }
+  50% { transform: rotate(10deg); }
+}
+
+/* 欢迎画面过渡 */
+.welcome-screen {
+  opacity: 1;
+  transition: opacity 0.8s ease-out;
+}
+
+.welcome-screen.fade-out {
+  opacity: 0;
 }
