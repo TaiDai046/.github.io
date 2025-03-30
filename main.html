@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寵物咖啡廳</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>🐾 寵物咖啡廳</h1>
+    </header>
+
+    <section class="menu">
+        <h2>☕ 咖啡菜單</h2>
+        <div class="coffee-item">
+            <img src="images/coffee1.jpg" alt="美式咖啡">
+            <p>美式咖啡 - $100</p>
+        </div>
+        <div class="coffee-item">
+            <img src="images/coffee2.jpg" alt="拿鐵">
+            <p>拿鐵 - $120</p>
+        </div>
+    </section>
+
+    <section class="staff">
+        <h2>🐕 狗狗店員</h2>
+        <div class="staff-member">
+            <img src="images/staff1.jpg" alt="狗狗店員">
+            <p>我是熱情的狗狗咖啡師！</p>
+        </div>
+    </section>
+
+    <section class="team">
+        <h2>👨‍💼 店內人員</h2>
+        <div class="team-member">
+            <img src="images/staff2.jpg" alt="店長">
+            <p>店長 - 小明</p>
+        </div>
+    </section>
+
+    <section class="quiz-section">
+        <h2>📝 小測驗</h2>
+        <button onclick="startQuiz('quiz1.html')">測驗 1</button>
+        <button onclick="startQuiz('quiz2.html')">測驗 2</button>
+        <button onclick="startQuiz('quiz3.html')">測驗 3</button>
+    </section>
+
+    <script>
+        function startQuiz(url) {
+            window.location.href = url;
+        }
+    </script>
+</body>
+</html>
