@@ -1,126 +1,173 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh">
 <head>
-    <title>我的物標地圖</title>
-    <meta charset="utf-8" />
-    <!-- Leaflet CSS & JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <style>
-        body { margin: 0; padding: 0; }
-        #map { height: 100vh; width: 100%; } /* 全螢幕地圖 */
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>地图照片标记工具</title>
+  <!-- Leaflet 地图库 -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Supabase 客户端 -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    body { margin: 0; font-family: Arial; }
+    #map { height: 100vh; width: 100%; }
+    #upload-panel {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+      max-width: 300px;
+    }
+    #preview { max-width: 100%; max-height: 150px; display: none; }
+    button { cursor: pointer; padding: 8px 12px; }
+  </style>
 </head>
 <body>
-    <div id="map"></div>
+  <div id="map"></div>
+  
+  <div id="upload-panel" style="display: none;">
+    <h3>添加照片标记</h3>
+    <input type="file" id="photo-input" accept="image/*">
+    <img id="preview">
+    <p id="status"></p>
+    <button id="save-btn">保存标记</button>
+    <button id="cancel-btn">取消</button>
+  </div>
 
-    <script>
-        // 初始化地圖 (預設中心點: 台北車站)
-        const map = L.map('map').setView([25.0478, 121.5179], 15);
+  <script>
+    // ========== 配置区域 ========== //
+    const SUPABASE_URL = 'https://your-project.supabase.co';  // 替换为你的 Supabase URL
+    const SUPABASE_KEY = 'your-anon-key';                   // 替换为你的 anon key
+    const MAP_INITIAL_VIEW = [25.0330, 121.5654];          // 初始地图中心坐标（台北101）
+    const STORAGE_BUCKET = 'map-photos';                   // Supabase 存储桶名称
+    // ============================ //
 
-        // 載入 OpenStreetMap 底圖
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(map);
+    // 初始化 Supabase
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // ===== 1. 手動添加標記 =====
-        const marker1 = L.marker([25.0478, 121.5179]).addTo(map)
-            .bindPopup("<b>台北車站</b><br>交通樞紐");
+    // 初始化地图
+    const map = L.map('map').setView(MAP_INITIAL_VIEW, 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
 
-        const marker2 = L.marker([25.0330, 121.5654]).addTo(map)
-            .bindPopup("<b>台北 101</b><br>觀光地標");
+    // 全局变量
+    let currentMarker = null;
+    let selectedFile = null;
 
-        // ===== 2. 自訂圖示 =====
-        const customIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-            iconSize: [32, 32]
-        });
+    // ==================== 事件监听 ====================
+    // 地图点击事件
+    map.on('click', (e) => {
+      if (currentMarker) map.removeLayer(currentMarker);
+      
+      currentMarker = L.marker(e.latlng).addTo(map)
+        .bindPopup("正在添加照片...").openPopup();
+      
+      document.getElementById('upload-panel').style.display = 'block';
+      document.getElementById('status').textContent = '请选择照片';
+    });
+
+    // 照片选择预览
+    document.getElementById('photo-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      selectedFile = file;
+      const preview = document.getElementById('preview');
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = 'block';
+      document.getElementById('status').textContent = `已选择: ${file.name}`;
+    });
+
+    // 保存标记
+    document.getElementById('save-btn').addEventListener('click', async () => {
+      if (!currentMarker || !selectedFile) {
+        alert('请先选择位置和照片！');
+        return;
+      }
+
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = '上传中...';
+
+      try {
+        // 1. 上传照片
+        const fileName = `markers/${Date.now()}_${selectedFile.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .upload(fileName, selectedFile);
+
+        if (uploadError) throw uploadError;
+
+        // 2. 获取公开URL
+        const { data: { publicUrl } } = supabase.storage
+          .from(STORAGE_BUCKET)
+          .getPublicUrl(uploadData.path);
+
+        // 3. 更新标记
+        currentMarker.setPopupContent(`<img src="${publicUrl}" style="max-width:200px;">`);
+        statusEl.textContent = '上传成功！';
         
-        L.marker([25.0420, 121.5645], { icon: customIcon })
-            .addTo(map)
-            .bindPopup("信義商圈<br><img src='https://picsum.photos/100/50' alt='商圈照片'>");
+        // 4. 保存到数据库（可选）
+        const { error: dbError } = await supabase
+          .from('map_markers')
+          .insert({
+            lat: currentMarker.getLatLng().lat,
+            lng: currentMarker.getLatLng().lng,
+            photo_url: publicUrl,
+            created_at: new Date().toISOString()
+          });
 
-        // ===== 3. 繪製線條與多邊形 =====
-        const line = L.polyline([
-            [25.0478, 121.5179],
-            [25.0420, 121.5645],
-            [25.0330, 121.5654]
-        ], { color: 'red', weight: 5 }).addTo(map)
-            .bindPopup("推薦路線");
+        if (dbError) console.error('数据库保存失败:', dbError);
 
-        const polygon = L.polygon([
-            [25.0400, 121.5500],
-            [25.0400, 121.5700],
-            [25.0300, 121.5700],
-            [25.0300, 121.5500]
-        ], { color: 'blue', fillOpacity: 0.2 }).addTo(map)
-            .bindPopup("活動範圍");
+        // 重置表单
+        resetUploadPanel();
+        
+      } catch (error) {
+        console.error(error);
+        statusEl.textContent = `上传失败: ${error.message}`;
+      }
+    });
 
-        // ===== 4. 從 GeoJSON 載入資料 =====
-        fetch('data/locations.geojson')  // 載入同目錄下的 GeoJSON 檔案
-            .then(response => response.json())
-            .then(data => {
-                L.geoJSON(data, {
-                    pointToLayer: (feature, latlng) => {
-                        return L.marker(latlng).bindPopup(
-                            `<b>${feature.properties.name}</b><br>${feature.properties.description}`
-                        );
-                    }
-                }).addTo(map);
-            });
+    // 取消操作
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+      if (currentMarker) map.removeLayer(currentMarker);
+      resetUploadPanel();
+    });
 
-        // ===== 5. 新增定位功能 =====
-        // 自訂「當前位置」圖示
-        const myLocationIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/535/535137.png',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32]
-        });
+    // ==================== 工具函数 ====================
+    function resetUploadPanel() {
+      document.getElementById('upload-panel').style.display = 'none';
+      document.getElementById('photo-input').value = '';
+      document.getElementById('preview').style.display = 'none';
+      selectedFile = null;
+      currentMarker = null;
+    }
 
-        // 新增定位按鈕控制項
-        const locateControl = L.control({ position: 'topleft' });
-        locateControl.onAdd = function(map) {
-            const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-            div.innerHTML = '<a href="#" title="定位我的位置">📍</a>';
-            div.onclick = locateUser;
-            return div;
-        };
-        locateControl.addTo(map);
+    // 初始化加载已有标记
+    async function loadExistingMarkers() {
+      const { data: markers, error } = await supabase
+        .from('map_markers')
+        .select('*');
 
-        // 定位使用者位置
-        function locateUser() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    position => {
-                        const { latitude, longitude } = position.coords;
-                        // 移除舊的標記（避免重複）
-                        if (window.userMarker) map.removeLayer(window.userMarker);
-                        
-                        // 添加新標記
-                        window.userMarker = L.marker([latitude, longitude], { 
-                            icon: myLocationIcon,
-                            zIndexOffset: 1000
-                        }).addTo(map)
-                            .bindPopup(`
-                                <b>我的位置</b><br>
-                                緯度: ${latitude.toFixed(4)}<br>
-                                經度: ${longitude.toFixed(4)}<br>
-                                <small>${new Date().toLocaleString()}</small>
-                            `)
-                            .openPopup();
-                        
-                        // 將地圖視角移動到當前位置
-                        map.setView([latitude, longitude], 16);
-                    },
-                    error => {
-                        alert('無法取得位置：' + error.message);
-                    },
-                    { enableHighAccuracy: true }
-                );
-            } else {
-                alert('您的瀏覽器不支援地理定位功能！');
-            }
-        }
-    </script>
+      if (error) {
+        console.error('加载标记失败:', error);
+        return;
+      }
+
+      markers.forEach(marker => {
+        L.marker([marker.lat, marker.lng])
+          .addTo(map)
+          .bindPopup(`<img src="${marker.photo_url}" style="max-width:200px;">`);
+      });
+    }
+
+    // 页面加载时执行
+    loadExistingMarkers();
+  </script>
 </body>
 </html>
