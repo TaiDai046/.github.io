@@ -1,0 +1,27 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "name": "中正紀念堂",
+                "description": "歷史建築"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [121.5215, 25.0349]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "name": "西門町",
+                "description": "購物區"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [121.5078, 25.0419]
+            }
+        }
+    ]
+}
