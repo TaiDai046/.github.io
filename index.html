@@ -68,6 +68,59 @@
                     }
                 }).addTo(map);
             });
+
+        // ===== 5. 新增定位功能 =====
+        // 自訂「當前位置」圖示
+        const myLocationIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/535/535137.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32]
+        });
+
+        // 新增定位按鈕控制項
+        const locateControl = L.control({ position: 'topleft' });
+        locateControl.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            div.innerHTML = '<a href="#" title="定位我的位置">📍</a>';
+            div.onclick = locateUser;
+            return div;
+        };
+        locateControl.addTo(map);
+
+        // 定位使用者位置
+        function locateUser() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        const { latitude, longitude } = position.coords;
+                        // 移除舊的標記（避免重複）
+                        if (window.userMarker) map.removeLayer(window.userMarker);
+                        
+                        // 添加新標記
+                        window.userMarker = L.marker([latitude, longitude], { 
+                            icon: myLocationIcon,
+                            zIndexOffset: 1000
+                        }).addTo(map)
+                            .bindPopup(`
+                                <b>我的位置</b><br>
+                                緯度: ${latitude.toFixed(4)}<br>
+                                經度: ${longitude.toFixed(4)}<br>
+                                <small>${new Date().toLocaleString()}</small>
+                            `)
+                            .openPopup();
+                        
+                        // 將地圖視角移動到當前位置
+                        map.setView([latitude, longitude], 16);
+                    },
+                    error => {
+                        alert('無法取得位置：' + error.message);
+                    },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                alert('您的瀏覽器不支援地理定位功能！');
+            }
+        }
     </script>
 </body>
 </html>
