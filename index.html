@@ -10,8 +10,16 @@
   <!-- Supabase 客户端 -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <style>
-    body { margin: 0; font-family: Arial; }
-    #map { height: 100vh; width: 100%; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: Arial;
+    }
+    #map { 
+      height: 100%;
+      width: 100%;
+    }
     #upload-panel {
       position: absolute;
       top: 10px;
@@ -41,133 +49,135 @@
 
   <script>
     // ========== 配置区域 ========== //
-    const SUPABASE_URL = 'https://tddyawtrxcvvjnmfbiez.supabase.co';  // 替换为你的 Supabase URL
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkZHlhd3RyeGN2dmpubWZiaWV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NjE0MzgsImV4cCI6MjA1OTMzNzQzOH0.RfDnVgmzHIQ5VG1VUr2QsDP0VgXIYfZBI3AeK0ANXsY';                   // 替换为你的 anon key
-    const MAP_INITIAL_VIEW = [25.0330, 121.5654];          // 初始地图中心坐标（台北101）
-    const STORAGE_BUCKET = 'map-photos';                   // Supabase 存储桶名称
+    const SUPABASE_URL = 'https://tddyawtrxcvvjnmfbiez.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkZHlhd3RyeGN2dmpubWZiaWV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3NjE0MzgsImV4cCI6MjA1OTMzNzQzOH0.RfDnVgmzHIQ5VG1VUr2QsDP0VgXIYfZBI3AeK0ANXsY';
+    const MAP_INITIAL_VIEW = [25.0330, 121.5654]; // 台北101坐标
+    const STORAGE_BUCKET = 'map-photos';
     // ============================ //
 
-    // 初始化 Supabase
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // 初始化地图
-    const map = L.map('map').setView(MAP_INITIAL_VIEW, 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
-
-    // 全局变量
-    let currentMarker = null;
-    let selectedFile = null;
-
-    // ==================== 事件监听 ====================
-    // 地图点击事件
-    map.on('click', (e) => {
-      if (currentMarker) map.removeLayer(currentMarker);
+    // 等待DOM完全加载
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 初始化Supabase
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       
-      currentMarker = L.marker(e.latlng).addTo(map)
-        .bindPopup("正在添加照片...").openPopup();
-      
-      document.getElementById('upload-panel').style.display = 'block';
-      document.getElementById('status').textContent = '请选择照片';
-    });
+      // 初始化地图
+      const map = L.map('map').setView(MAP_INITIAL_VIEW, 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
 
-    // 照片选择预览
-    document.getElementById('photo-input').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+      // 全局变量
+      let currentMarker = null;
+      let selectedFile = null;
 
-      selectedFile = file;
-      const preview = document.getElementById('preview');
-      preview.src = URL.createObjectURL(file);
-      preview.style.display = 'block';
-      document.getElementById('status').textContent = `已选择: ${file.name}`;
-    });
-
-    // 保存标记
-    document.getElementById('save-btn').addEventListener('click', async () => {
-      if (!currentMarker || !selectedFile) {
-        alert('请先选择位置和照片！');
-        return;
-      }
-
-      const statusEl = document.getElementById('status');
-      statusEl.textContent = '上传中...';
-
-      try {
-        // 1. 上传照片
-        const fileName = `markers/${Date.now()}_${selectedFile.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .upload(fileName, selectedFile);
-
-        if (uploadError) throw uploadError;
-
-        // 2. 获取公开URL
-        const { data: { publicUrl } } = supabase.storage
-          .from(STORAGE_BUCKET)
-          .getPublicUrl(uploadData.path);
-
-        // 3. 更新标记
-        currentMarker.setPopupContent(`<img src="${publicUrl}" style="max-width:200px;">`);
-        statusEl.textContent = '上传成功！';
+      // ==================== 事件监听 ====================
+      // 地图点击事件
+      map.on('click', (e) => {
+        if (currentMarker) map.removeLayer(currentMarker);
         
-        // 4. 保存到数据库（可选）
-        const { error: dbError } = await supabase
-          .from('map_markers')
-          .insert({
-            lat: currentMarker.getLatLng().lat,
-            lng: currentMarker.getLatLng().lng,
-            photo_url: publicUrl,
-            created_at: new Date().toISOString()
-          });
-
-        if (dbError) console.error('数据库保存失败:', dbError);
-
-        // 重置表单
-        resetUploadPanel();
+        currentMarker = L.marker(e.latlng).addTo(map)
+          .bindPopup("正在添加照片...").openPopup();
         
-      } catch (error) {
-        console.error(error);
-        statusEl.textContent = `上传失败: ${error.message}`;
-      }
-    });
-
-    // 取消操作
-    document.getElementById('cancel-btn').addEventListener('click', () => {
-      if (currentMarker) map.removeLayer(currentMarker);
-      resetUploadPanel();
-    });
-
-    // ==================== 工具函数 ====================
-    function resetUploadPanel() {
-      document.getElementById('upload-panel').style.display = 'none';
-      document.getElementById('photo-input').value = '';
-      document.getElementById('preview').style.display = 'none';
-      selectedFile = null;
-      currentMarker = null;
-    }
-
-    // 初始化加载已有标记
-    async function loadExistingMarkers() {
-      const { data: markers, error } = await supabase
-        .from('map_markers')
-        .select('*');
-
-      if (error) {
-        console.error('加载标记失败:', error);
-        return;
-      }
-
-      markers.forEach(marker => {
-        L.marker([marker.lat, marker.lng])
-          .addTo(map)
-          .bindPopup(`<img src="${marker.photo_url}" style="max-width:200px;">`);
+        document.getElementById('upload-panel').style.display = 'block';
+        document.getElementById('status').textContent = '请选择照片';
       });
-    }
 
-    // 页面加载时执行
-    loadExistingMarkers();
+      // 照片选择预览
+      document.getElementById('photo-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        selectedFile = file;
+        const preview = document.getElementById('preview');
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+        document.getElementById('status').textContent = `已选择: ${file.name}`;
+      });
+
+      // 保存标记
+      document.getElementById('save-btn').addEventListener('click', async () => {
+        if (!currentMarker || !selectedFile) {
+          alert('请先选择位置和照片！');
+          return;
+        }
+
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = '上传中...';
+
+        try {
+          // 1. 上传照片
+          const fileName = `markers/${Date.now()}_${selectedFile.name}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from(STORAGE_BUCKET)
+            .upload(fileName, selectedFile);
+
+          if (uploadError) throw uploadError;
+
+          // 2. 获取公开URL
+          const { data: { publicUrl } } = supabase.storage
+            .from(STORAGE_BUCKET)
+            .getPublicUrl(uploadData.path);
+
+          // 3. 更新标记
+          currentMarker.setPopupContent(`<img src="${publicUrl}" style="max-width:200px;">`);
+          statusEl.textContent = '上传成功！';
+          
+          // 4. 保存到数据库
+          const { error: dbError } = await supabase
+            .from('map_markers')
+            .insert({
+              lat: currentMarker.getLatLng().lat,
+              lng: currentMarker.getLatLng().lng,
+              photo_url: publicUrl,
+              created_at: new Date().toISOString()
+            });
+
+          if (dbError) console.error('数据库保存失败:', dbError);
+
+          // 重置表单
+          resetUploadPanel();
+          
+        } catch (error) {
+          console.error(error);
+          statusEl.textContent = `上传失败: ${error.message}`;
+        }
+      });
+
+      // 取消操作
+      document.getElementById('cancel-btn').addEventListener('click', () => {
+        if (currentMarker) map.removeLayer(currentMarker);
+        resetUploadPanel();
+      });
+
+      // ==================== 工具函数 ====================
+      function resetUploadPanel() {
+        document.getElementById('upload-panel').style.display = 'none';
+        document.getElementById('photo-input').value = '';
+        document.getElementById('preview').style.display = 'none';
+        selectedFile = null;
+        currentMarker = null;
+      }
+
+      // 初始化加载已有标记
+      await loadExistingMarkers();
+
+      async function loadExistingMarkers() {
+        const { data: markers, error } = await supabase
+          .from('map_markers')
+          .select('*');
+
+        if (error) {
+          console.error('加载标记失败:', error);
+          return;
+        }
+
+        markers.forEach(marker => {
+          L.marker([marker.lat, marker.lng])
+            .addTo(map)
+            .bindPopup(`<img src="${marker.photo_url}" style="max-width:200px;">`);
+        });
+      }
+    });
   </script>
 </body>
 </html>
