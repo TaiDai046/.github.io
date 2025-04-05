@@ -41,11 +41,27 @@
       cursor: pointer; 
       padding: 8px 12px; 
       margin-top: 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
     }
-    .leaflet-bar {
+    #cancel-btn {
+      background: #f44336;
+    }
+    .leaflet-control-locate {
       background: white;
       padding: 5px;
       border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    }
+    .user-location-pulse {
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
     }
   </style>
 </head>
@@ -74,6 +90,14 @@
     let currentMarker = null;
     let selectedFile = null;
     let supabase;
+    let userLocationMarker = null;
+
+    // 自定义定位图标
+    const locationIcon = L.divIcon({
+      className: 'user-location-pulse',
+      html: '<div style="background:blue;border-radius:50%;width:16px;height:16px;"></div>',
+      iconSize: [16, 16]
+    });
 
     // 等待DOM完全加载
     document.addEventListener('DOMContentLoaded', async () => {
@@ -82,19 +106,12 @@
       
       // 初始化地图
       map = L.map('map').setView(MAP_INITIAL_VIEW, 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}/.png', {
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
 
       // 添加定位控件
-      const locateControl = L.control({ position: 'topleft' });
-      locateControl.onAdd = function(map) {
-        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-        div.innerHTML = '<a href="#" title="定位我的位置">📍</a>';
-        div.onclick = locateUser;
-        return div;
-      };
-      locateControl.addTo(map);
+      addLocateControl();
 
       // 初始化加载已有标记
       await loadExistingMarkers();
@@ -179,6 +196,79 @@
       });
     });
 
+    // 添加定位控件
+    function addLocateControl() {
+      const locateControl = L.control({ position: 'topleft' });
+      
+      locateControl.onAdd = function() {
+        const div = L.DomUtil.create('div', 'leaflet-control-locate');
+        div.innerHTML = '<a href="#" title="定位我的位置" style="font-size:1.5em;">📍</a>';
+        div.onclick = locateUser;
+        return div;
+      };
+      
+      locateControl.addTo(map);
+    }
+
+    // 定位用户位置
+    async function locateUser(e) {
+      if (e) e.preventDefault();
+      
+      if (!navigator.geolocation) {
+        alert('您的浏览器不支持地理定位功能');
+        return;
+      }
+
+      const statusEl = document.getElementById('status');
+      if (statusEl) statusEl.textContent = '定位中...';
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          map.setView([latitude, longitude], 16);
+          
+          // 移除旧标记
+          if (userLocationMarker) {
+            map.removeLayer(userLocationMarker);
+          }
+          
+          // 添加新标记
+          userLocationMarker = L.marker([latitude, longitude], {
+            icon: locationIcon,
+            zIndexOffset: 1000
+          })
+          .addTo(map)
+          .bindPopup('您的位置')
+          .openPopup();
+
+          if (statusEl) statusEl.textContent = '定位成功！';
+        },
+        (error) => {
+          let errorMessage = '获取位置失败: ';
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += "用户拒绝了位置请求";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += "位置信息不可用";
+              break;
+            case error.TIMEOUT:
+              errorMessage += "请求超时";
+              break;
+            default:
+              errorMessage += error.message;
+          }
+          alert(errorMessage);
+          if (statusEl) statusEl.textContent = errorMessage;
+        },
+        { 
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+
     // ==================== 工具函数 ====================
     function resetUploadPanel() {
       document.getElementById('upload-panel').style.display = 'none';
@@ -204,42 +294,6 @@
           .addTo(map)
           .bindPopup(`<img src="${marker.photo_url}" style="max-width:200px;">`);
       });
-    }
-
-    // 定位用户位置
-    async function locateUser(e) {
-      e.preventDefault();
-      if (!navigator.geolocation) {
-        alert('您的浏览器不支持地理定位功能');
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          map.setView([latitude, longitude], 15);
-          
-          // 添加定位标记
-          if (window.userLocationMarker) {
-            map.removeLayer(window.userLocationMarker);
-          }
-          
-          window.userLocationMarker = L.marker([latitude, longitude], {
-            icon: L.divIcon({
-              className: 'user-location-icon',
-              html: '📍',
-              iconSize: [30, 30]
-            })
-          })
-          .addTo(map)
-          .bindPopup('您的位置')
-          .openPopup();
-        },
-        (error) => {
-          alert(`获取位置失败: ${error.message}`);
-        },
-        { enableHighAccuracy: true }
-      );
     }
   </script>
 </body>
