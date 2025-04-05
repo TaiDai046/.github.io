@@ -31,8 +31,22 @@
       z-index: 1000;
       max-width: 300px;
     }
-    #preview { max-width: 100%; max-height: 150px; display: none; }
-    button { cursor: pointer; padding: 8px 12px; }
+    #preview { 
+      max-width: 100%; 
+      max-height: 150px; 
+      display: none; 
+      margin-top: 10px;
+    }
+    button { 
+      cursor: pointer; 
+      padding: 8px 12px; 
+      margin-top: 10px;
+    }
+    .leaflet-bar {
+      background: white;
+      padding: 5px;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
@@ -55,20 +69,35 @@
     const STORAGE_BUCKET = 'map-photos';
     // ============================ //
 
+    // 全局变量
+    let map;
+    let currentMarker = null;
+    let selectedFile = null;
+    let supabase;
+
     // 等待DOM完全加载
     document.addEventListener('DOMContentLoaded', async () => {
       // 初始化Supabase
-      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       
       // 初始化地图
-      const map = L.map('map').setView(MAP_INITIAL_VIEW, 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      map = L.map('map').setView(MAP_INITIAL_VIEW, 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}/.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
 
-      // 全局变量
-      let currentMarker = null;
-      let selectedFile = null;
+      // 添加定位控件
+      const locateControl = L.control({ position: 'topleft' });
+      locateControl.onAdd = function(map) {
+        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+        div.innerHTML = '<a href="#" title="定位我的位置">📍</a>';
+        div.onclick = locateUser;
+        return div;
+      };
+      locateControl.addTo(map);
+
+      // 初始化加载已有标记
+      await loadExistingMarkers();
 
       // ==================== 事件监听 ====================
       // 地图点击事件
@@ -148,48 +177,70 @@
         if (currentMarker) map.removeLayer(currentMarker);
         resetUploadPanel();
       });
-
-      // ==================== 工具函数 ====================
-      function resetUploadPanel() {
-        document.getElementById('upload-panel').style.display = 'none';
-        document.getElementById('photo-input').value = '';
-        document.getElementById('preview').style.display = 'none';
-        selectedFile = null;
-        currentMarker = null;
-      }
-
-      // 初始化加载已有标记
-      await loadExistingMarkers();
-
-      async function loadExistingMarkers() {
-        const { data: markers, error } = await supabase
-          .from('map_markers')
-          .select('*');
-
-        if (error) {
-          console.error('加载标记失败:', error);
-          return;
-        }
-
-        markers.forEach(marker => {
-          L.marker([marker.lat, marker.lng])
-            .addTo(map)
-            .bindPopup(`<img src="${marker.photo_url}" style="max-width:200px;">`);
-        });
-      }
     });
-    
-    const locateControl = L.control({ position: 'topleft' });
-    locateControl.onAdd = function(map) {
-        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-        div.innerHTML = '<a href="#" title="定位我的位置">📍</a>';
-        div.onclick = locateUser;
-        return div;
-    };
-    locateControl.addTo(map);
 
-    // ...（後面接著加入下方的定位函式）
-</script>
+    // ==================== 工具函数 ====================
+    function resetUploadPanel() {
+      document.getElementById('upload-panel').style.display = 'none';
+      document.getElementById('photo-input').value = '';
+      document.getElementById('preview').style.display = 'none';
+      selectedFile = null;
+      currentMarker = null;
+    }
+
+    // 加载已有标记
+    async function loadExistingMarkers() {
+      const { data: markers, error } = await supabase
+        .from('map_markers')
+        .select('*');
+
+      if (error) {
+        console.error('加载标记失败:', error);
+        return;
+      }
+
+      markers.forEach(marker => {
+        L.marker([marker.lat, marker.lng])
+          .addTo(map)
+          .bindPopup(`<img src="${marker.photo_url}" style="max-width:200px;">`);
+      });
+    }
+
+    // 定位用户位置
+    async function locateUser(e) {
+      e.preventDefault();
+      if (!navigator.geolocation) {
+        alert('您的浏览器不支持地理定位功能');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          map.setView([latitude, longitude], 15);
+          
+          // 添加定位标记
+          if (window.userLocationMarker) {
+            map.removeLayer(window.userLocationMarker);
+          }
+          
+          window.userLocationMarker = L.marker([latitude, longitude], {
+            icon: L.divIcon({
+              className: 'user-location-icon',
+              html: '📍',
+              iconSize: [30, 30]
+            })
+          })
+          .addTo(map)
+          .bindPopup('您的位置')
+          .openPopup();
+        },
+        (error) => {
+          alert(`获取位置失败: ${error.message}`);
+        },
+        { enableHighAccuracy: true }
+      );
+    }
   </script>
 </body>
 </html>
