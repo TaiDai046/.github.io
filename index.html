@@ -178,6 +178,18 @@
         });
       }
     });
+    
+    const locateControl = L.control({ position: 'topleft' });
+    locateControl.onAdd = function(map) {
+        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+        div.innerHTML = '<a href="#" title="定位我的位置">📍</a>';
+        div.onclick = locateUser;
+        return div;
+    };
+    locateControl.addTo(map);
+
+    // ...（後面接著加入下方的定位函式）
+</script>
   </script>
 </body>
 </html>
